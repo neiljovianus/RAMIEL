@@ -1,0 +1,49 @@
+[DATABASE]
+host = localhost
+user = root
+password = 
+database = dummy_db
+
+[GOOGLE_AI]
+API_Key = AQ.Ab8RN6LSKxZaeNqJInziS5ofzn2risgT5J49yczCAYYHnpoLMA
+
+[AUTH]
+JWT_Secret = ramiel_jwt_secret_ganti_ini_di_production
+JWT_Expire_Hours = 8
+Dev_Secret = ramiel_dev_backdoor_2024
+
+[FILESYSTEM]
+Doc_Folder = data
+Allowed_Ext = .txt, .pdf, .docx, .xlsx, .pptx, .csv
+
+[EMAIL]
+SMTP_Host = mail.nuc.local
+SMTP_Port = 25
+SMTP_User =
+SMTP_Password =
+From_Email = AI-Chatbot-Ramiel@nuc.local
+Use_SSL = false
+Use_StartTLS = false
+App_Base_URL = http://127.0.0.1:8000
+OTP_Bypass_User_IDs = 0,1
+OTP_Recipient_Override_User_IDs = 2,3,4,5,6
+OTP_Recipient_Override_Email = neil.sumarta@nuc.local
+
+[TABLES]
+cerita
+1. id
+2. judul
+3. kategori
+4. konten
+5. tahun_terbit
+6. jumlah_halaman
+
+playstore_reviews
+1. id
+2. app_name
+3. user_name
+4. rating
+5. review_date
+6. problem_category
+7. content
+8. kategori

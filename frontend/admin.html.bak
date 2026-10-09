@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Settings - RAMIEL</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            position: relative;
+            margin: 0;
+            background: var(--L0);
+            color: var(--L80);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-w);
+            height: 100vh;
+            background: var(--L5);
+            border-right: 1px solid var(--L10);
+            display: flex;
+            flex-direction: column;
+            z-index: 200;
+            transform: translateX(calc(-1 * var(--sidebar-w)));
+            transition: transform 0.3s cubic-bezier(0.65, 0, 0.35, 1);
+            overflow: visible;
+        }
+
+        .sidebar.open { transform: translateX(0); }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            border-bottom: 1px solid var(--L10);
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--L80);
+            letter-spacing: 1px;
+        }
+
+        .sidebar-toggle {
+            background: transparent;
+            border: none;
+            color: var(--L50);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, color 0.2s;
+            flex-shrink: 0;
+        }
+
+        .sidebar-toggle:hover { background: var(--L10); color: var(--L80); }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 12px 8px;
+            flex-shrink: 0;
+        }
+
+        .nav-item {
+            background: transparent;
+            border: none;
+            color: var(--L50);
+            padding: 10px 12px;
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-family: 'Inter', sans-serif;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: var(--L10);
+            color: var(--L100);
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 199;
+            pointer-events: auto;
+        }
+
+        .sidebar-overlay.show { display: block; }
+
+        .account-btn {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            height: 42px;
+            border-radius: 21px;
+            background: var(--L10);
+            border: 1px solid var(--L20);
+            color: var(--L50);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 11px;
+            z-index: 150;
+            transition: background 0.2s, color 0.2s, transform 0.2s;
+            overflow: hidden;
+        }
+
+        .account-btn:hover { background: var(--L20); color: var(--L80); transform: scale(1.05); }
+        .account-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+            display: none;
+        }
+        .account-btn.has-name .account-name { display: block; }
+
+        .account-popup {
+            position: absolute;
+            bottom: 76px;
+            left: 24px;
+            background: var(--L10);
+            border: 1px solid var(--L20);
+            border-radius: 12px;
+            padding: 8px;
+            min-width: 240px;
+            z-index: 251;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            animation: fadeIn 0.15s ease-out;
+        }
+        .account-popup.hidden { display: none; }
+
+        .popup-btn {
+            padding: 9px 12px;
+            background: transparent;
+            border: none;
+            color: var(--L80);
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            transition: background 0.15s;
+            width: 100%;
+        }
+        .popup-btn:hover { background: var(--L20); }
+        .popup-btn.danger { color: var(--accent); }
+        .popup-btn.danger:hover { background: rgba(255,0,0,0.08); }
+
+        .app-layout {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 1;
+            transition: padding-left 0.3s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+
+        .topbar {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+            background: var(--L0);
+            position: relative;
+            z-index: 100;
+        }
+
+        .topbar-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .admin-main {
+            flex: 1;
+            padding: 16px 24px 24px;
+            overflow: auto;
+        }
+
+        .admin-panel {
+            background: var(--L5);
+            border: 1px solid var(--L10);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+        }
+
+        .admin-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--L10);
+        }
+
+        .admin-panel-header h1 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--L100);
+        }
+
+        .admin-header-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 8px;
+        }
+
+        .admin-action-button {
+            border: 1px solid var(--L30);
+            border-radius: 6px;
+            padding: 8px 12px;
+            background: var(--L10);
+            color: var(--L90);
+            font: 500 0.875rem 'Inter', sans-serif;
+            cursor: pointer;
+        }
+
+        .admin-action-button:hover { background: var(--L20); }
+
+        .invitation-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            white-space: nowrap;
+        }
+
+        .invitation-link,
+        .invitation-copy {
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: #55aaff;
+            font: 500 0.875rem 'Inter', sans-serif;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .invitation-link:hover,
+        .invitation-copy:hover { color: #8ac4ff; text-decoration: underline; }
+
+        .admin-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            margin: 0;
+            transform: translate(-50%, -50%);
+            width: min(480px, calc(100vw - 32px));
+            max-height: calc(100vh - 32px);
+            overflow-y: auto;
+            border: 1px solid var(--L30);
+            border-radius: 10px;
+            padding: 22px;
+            background: var(--L5);
+            color: var(--L90);
+            box-shadow: 0 18px 60px rgba(0,0,0,0.45);
+        }
+        #user-management-dialog { width: min(720px, calc(100vw - 32px)); }
+
+        .admin-dialog::backdrop { background: rgba(0,0,0,0.6); }
+        .admin-dialog h2 { margin: 0 0 16px; font-size: 1.05rem; }
+        .admin-dialog label { display: block; margin: 12px 0 6px; font-size: 0.85rem; color: var(--L70); }
+        .admin-dialog input { width: 100%; box-sizing: border-box; }
+        .admin-dialog select { width: 100%; box-sizing: border-box; }
+        #user-management-dialog .input-cell:not([readonly]):not([type="hidden"]) {
+            border: 1px solid var(--L30);
+            border-radius: 6px;
+            padding: 9px 10px;
+            background: var(--L10);
+        }
+        #user-management-dialog .input-cell:not([readonly]):not([type="hidden"]):focus {
+            outline: none;
+            border-color: var(--L60);
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.12);
+        }
+        #user-management-dialog .input-cell[readonly],
+        #user-management-dialog .input-cell[readonly]:focus {
+            border-color: transparent;
+            background: transparent;
+            box-shadow: none;
+            outline: none;
+            cursor: default;
+        }
+        #user-management-title:focus { outline: none; }
+        .admin-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+        .user-management-top { display: grid; grid-template-columns: minmax(0, 1fr) 150px; align-items: center; gap: 16px; }
+        .user-management-top h2 { margin: 0 !important; overflow-wrap: anywhere; }
+        .account-status-dropdown.status-active { color: #7ee08a; }
+        .account-status-dropdown.status-suspended { color: #f0d06c; }
+        .account-status-dropdown.status-deactivated { color: #ff8c8c; }
+        .lifecycle-section { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--L20); }
+        .lifecycle-section h3 { margin: 0 0 8px; color: var(--L100); font-size: 0.95rem; font-weight: 600; }
+        .schedule-checkbox-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
+        .schedule-checkbox-grid.months { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        #user-management-dialog .schedule-option { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; margin: 0; padding: 5px; border: 1px solid var(--L30); border-radius: 6px; background: var(--L10); color: var(--L70); font-size: 0.8rem; cursor: pointer; }
+        .schedule-option.selected { border-color: var(--L60); background: var(--L20); color: var(--L100); }
+        #user-management-dialog .schedule-option input { width: 15px; height: 15px; flex: 0 0 15px; margin: 0; accent-color: var(--L80); }
+        .admin-field[hidden] { display: none; }
+        .dialog-danger { margin-right: auto; border-color: #b94343; color: #ff8c8c; }
+        .user-row-actions { display: flex; gap: 6px; white-space: nowrap; }
+        .admin-dialog p { color: var(--L70); font-size: 0.875rem; line-height: 1.5; }
+        .admin-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+        .dialog-secondary { background: transparent; }
+        @media (max-width: 520px) {
+            .admin-form-grid { grid-template-columns: 1fr; }
+            .user-management-top { grid-template-columns: minmax(0, 1fr) 130px; gap: 8px; }
+            .admin-dialog-actions { flex-wrap: wrap; }
+        }
+
+        .admin-badge {
+            display: none;
+        }
+
+        .table-wrap {
+            max-width: 100%;
+            min-width: 0;
+            overflow: auto;
+            overscroll-behavior-x: contain;
+            scrollbar-width: thin;
+            scrollbar-color: var(--L20) transparent;
+        }
+
+        table {
+            width: max-content;
+            min-width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            table-layout: auto;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--L10);
+            vertical-align: top;
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        th {
+            background: var(--L10);
+            color: var(--L70);
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        td {
+            font-size: 0.9rem;
+            color: var(--L80);
+            line-height: 1.5;
+        }
+
+        tbody tr:hover {
+            background: rgba(255,255,255,0.02);
+        }
+
+        .cell-truncate {
+            display: inline-block;
+            max-width: 360px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        .empty-state {
+            color: var(--L60);
+            text-align: center;
+            padding: 1.75rem 1rem;
+            font-size: 0.92rem;
+        }
+
+        .input-cell {
+            width: 100%;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            padding: 6px 8px;
+            color: var(--L100);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+        }
+
+        .input-cell:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: var(--L10);
+        }
+
+        .input-cell.changed {
+            border-color: var(--accent);
+        }
+
+        .action-icon {
+            background: transparent;
+            border: none;
+            color: var(--L60);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+        }
+
+        .action-icon:hover {
+            color: #f44336;
+            background: rgba(244,67,54,0.08);
+        }
+
+        .discord-bar {
+            position: fixed;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #111;
+            border: 1px solid var(--L40);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+        }
+
+        .theme-switcher {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            background: var(--L20);
+            border-radius: 40px;
+            padding: 4px;
+            min-width: 240px;
+            box-shadow: 0 4px 15px var(--L0);
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        .theme-slider {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            height: calc(100% - 8px);
+            width: calc((100% - 8px) / 3);
+            background: var(--L10);
+            border-radius: 30px;
+            transition: transform 0.3s cubic-bezier(0.65, 0, 0.35, 1), width 0.3s cubic-bezier(0.65, 0, 0.35, 1);
+            z-index: 1;
+        }
+
+        .theme-btn {
+            flex: 1 1 0;
+            background: transparent;
+            border: none;
+            color: var(--L50);
+            padding: 6px 14px;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            border-radius: 30px;
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+            transition: color 0.3s ease;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .theme-btn.active { color: var(--L80); }
+
+        .discord-bar.visible {
+            bottom: 2rem;
+        }
+
+        .btn-reset {
+            background: transparent;
+            border: none;
+            color: var(--L90);
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 0.9rem;
+        }
+
+        .btn-save {
+            background: #3ba55c;
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .btn-save:disabled {
+            background: var(--L50);
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="theme-dark">
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <button class="sidebar-toggle" id="sidebar-toggle-close" title="Close sidebar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <span class="sidebar-brand">Admin Settings</span>
+        </div>
+
+        <div class="sidebar-nav" id="sidebar-nav">
+            <button class="nav-item active" data-table="users">Users</button>
+            <button class="nav-item" data-table="invitations">Invitations</button>
+            <button class="nav-item" data-table="password_reset_requests">Password Resets</button>
+            <button class="nav-item" data-table="chat_sessions">Chat Sessions</button>
+            <button class="nav-item" data-table="chat_messages">Chat Messages</button>
+        </div>
+
+        <button class="account-btn" id="account-btn" title="Account">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            <span class="account-name" id="account-name"></span>
+        </button>
+
+        <div class="account-popup hidden" id="account-popup">
+            <button class="popup-btn" id="btn-back-to-chat">Back to Chat</button>
+            <button class="popup-btn" id="btn-logout">Log Out</button>
+            <button class="popup-btn danger" id="btn-delete-account">Delete Account</button>
+        </div>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <div class="app-layout" id="app-layout">
+        <div class="topbar">
+            <button class="sidebar-toggle" id="sidebar-toggle-open" title="Toggle sidebar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+
+            <div class="topbar-right">
+                <div class="theme-switcher">
+                    <div class="theme-slider" id="theme-slider"></div>
+                    <button class="theme-btn active" data-theme="dark">Dark</button>
+                    <button class="theme-btn" data-theme="ash">Ash</button>
+                    <button class="theme-btn" data-theme="light">Light</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-main">
+            <div class="admin-panel">
+                <div class="admin-panel-header">
+                    <h1 id="page-title">Users</h1>
+                    <div class="admin-header-actions">
+                        <button class="admin-action-button" id="btn-create-invitation" type="button" hidden>Invite user</button>
+                    </div>
+                </div>
+
+                <div class="table-wrap" tabindex="0" role="region" aria-label="Scrollable admin data table">
+                    <table>
+                        <thead id="table-head"></thead>
+                        <tbody id="table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="discord-bar" id="save-bar">
+        <p>Careful — you have unsaved changes!</p>
+        <div style="display: flex; gap: 1rem;">
+            <button class="btn-reset" id="btn-discard">Reset</button>
+            <button class="btn-save" id="btn-save">Save Changes</button>
+        </div>
+    </div>
+
+    <dialog class="admin-dialog" id="invitation-dialog">
+        <form id="invitation-form">
+            <h2>Invite user</h2>
+            <label for="invite-email">Email</label>
+            <input class="input-cell" id="invite-email" type="email" required autocomplete="email">
+            <label for="invite-company">Company (optional)</label>
+            <select class="input-cell" id="invite-company">
+                <option value="">-- Select Company --</option>
+                <option value="Vistakom">Vistakom</option>
+                <option value="BCA">BCA</option>
+                <option value="BSI">BSI</option>
+                <option value="BRI">BRI</option>
+                <option value="MUF">MUF</option>
+            </select>
+            <label for="invite-department">Department (optional)</label>
+            <input class="input-cell" id="invite-department" type="text" maxlength="100">
+            <div class="admin-dialog-actions">
+                <button class="admin-action-button dialog-secondary" id="btn-cancel-invitation" type="button">Cancel</button>
+                <button class="admin-action-button" type="submit">Create invitation</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog class="admin-dialog" id="user-management-dialog">
+        <form id="user-management-form">
+            <div class="user-management-top">
+                <h2 id="user-management-title" tabindex="-1">User ID</h2>
+                <div class="admin-field">
+                    <label for="managed-account-status">Account status</label>
+                    <select class="input-cell account-status-dropdown" id="managed-account-status" style="font-weight: 600;">
+                        <option value="active" style="color: #7ee08a;">Active</option>
+                        <option value="suspended" style="color: #f0d06c;">Suspended</option>
+                        <option value="deactivated" style="color: #ff8c8c;">Deactivated</option>
+                    </select>
+                </div>
+            </div>
+            <section class="lifecycle-section">
+                <h3>Account details</h3>
+                <div class="admin-form-grid">
+                    <div class="admin-field">
+                        <label for="managed-username">Username</label>
+                        <input class="input-cell" id="managed-username" maxlength="30">
+                    </div>
+                    <div class="admin-field">
+                        <label for="managed-role">Role</label>
+                        <select class="input-cell" id="managed-role">
+                            <option value="admin">Admin</option><option value="user">User</option>
+                        </select>
+                    </div>
+                    <div class="admin-field">
+                        <label for="managed-first-name">First Name</label>
+                        <input class="input-cell" id="managed-first-name" maxlength="100">
+                    </div>
+                    <div class="admin-field">
+                        <label for="managed-last-name">Last Name</label>
+                        <input class="input-cell" id="managed-last-name" maxlength="100">
+                    </div>
+                    <div class="admin-field">
+                        <label for="managed-email">Email</label>
+                        <input class="input-cell" id="managed-email" type="email" maxlength="150">
+                    </div>
+                    <div class="admin-field">
+                        <label for="managed-phone">Phone</label>
+                        <input class="input-cell" id="managed-phone" type="tel" maxlength="50">
+                        <small style="color: var(--L60); font-size: 0.75rem; margin-top: 4px; display: block;">Format: 08xxx (contoh: 08123456789)</small>
+                    </div>
+                    <div class="admin-field">
+                        <label for="managed-company">Company</label>
+                        <select class="input-cell" id="managed-company">
+                            <option value="">-- Select Company --</option>
+                            <option value="Vistakom">Vistakom</option>
+                            <option value="BCA">BCA</option>
+                            <option value="BSI">BSI</option>
+                            <option value="BRI">BRI</option>
+                            <option value="MUF">MUF</option>
+                        </select>
+                    </div>
+                    <div class="admin-field">
+                        <label for="managed-department">Department</label>
+                        <input class="input-cell" id="managed-department" maxlength="100">
+                    </div>
+                    <div class="admin-field" style="grid-column: 1 / -1;">
+                        <button id="btn-admin-send-reset-link" class="admin-action-button dialog-secondary" type="button" style="width: fit-content;">Send Password Reset Link</button>
+                    </div>
+                    <div class="admin-field">
+                        <label for="managed-account-expires-in">Account Expires In</label>
+                        <input class="input-cell" id="managed-account-expires-in" readonly>
+                    </div>
+                    <div class="admin-field">
+                        <label for="managed-account-expires-date">Account Expires Date</label>
+                        <input class="input-cell" id="managed-account-expires-date" readonly>
+                    </div>
+                    <div class="admin-field">
+                        <label for="managed-password-expires-in">Password Expires In</label>
+                        <input class="input-cell" id="managed-password-expires-in" readonly>
+                    </div>
+                    <div class="admin-field">
+                        <label for="managed-password-expires-date">Password Expires Date</label>
+                        <input class="input-cell" id="managed-password-expires-date" readonly>
+                    </div>
+                    <div class="admin-field">
+                        <label for="managed-created-date">Created Date</label>
+                        <input class="input-cell" id="managed-created-date" readonly>
+                    </div>
+                </div>
+            </section>
+            <section class="lifecycle-section">
+                <h3>Account expiry</h3>
+                <div class="admin-form-grid">
+                <div class="admin-field">
+                    <label for="managed-account-expiry-mode">Account expiry</label>
+                    <select class="input-cell" id="managed-account-expiry-mode">
+                        <option value="none">No expiry</option>
+                        <option value="duration">On a duration</option>
+                        <option value="date">On a date</option>
+                    </select>
+                </div>
+                <div class="admin-field" id="managed-account-months-field" hidden>
+                    <label for="managed-account-duration">Duration</label>
+                    <div class="admin-form-grid">
+                        <input class="input-cell" id="managed-account-duration" type="number" min="1" max="3650" required>
+                        <span style="align-self: center; color: var(--L60); padding-left: 8px;">day(s)</span>
+                    </div>
+                </div>
+                <div class="admin-field" id="managed-account-date-field" hidden>
+                    <label for="managed-account-date">Expiry date</label>
+                    <input class="input-cell" id="managed-account-date" type="date">
+                </div>
+                </div>
+            </section>
+            <section class="lifecycle-section">
+                <h3>Password expiry</h3>
+                <div class="admin-form-grid">
+                <div class="admin-field">
+                    <label for="managed-password-policy">Password expiry</label>
+                    <select class="input-cell" id="managed-password-policy">
+                        <option value="none" selected>No expiry</option>
+                        <option value="duration">On a duration</option>
+                        <option value="date">On a date</option>
+                    </select>
+                </div>
+                <div class="admin-field" id="managed-password-repeat-field" hidden>
+                    <label for="managed-password-repeat">Expiry behavior</label>
+                    <select class="input-cell" id="managed-password-repeat">
+                        <option value="once">Once</option>
+                        <option value="repeat">Repeat</option>
+                    </select>
+                </div>
+                <div class="admin-field" id="managed-password-spacer-field" hidden></div>
+                <div class="admin-field" id="managed-password-duration-field" hidden>
+                    <label for="managed-password-duration">Duration</label>
+                    <div class="admin-form-grid">
+                        <input class="input-cell" id="managed-password-duration" type="number" min="1" max="3650">
+                        <span style="align-self: center; color: var(--L60); padding-left: 8px;">day(s)</span>
+                    </div>
+                </div>
+                <div class="admin-field" id="managed-password-date-field" hidden>
+                    <label for="managed-password-date">Expiry date</label>
+                    <input class="input-cell" id="managed-password-date" type="date">
+                </div>
+                <div class="admin-field" id="managed-password-repeat-schedule" hidden>
+                    <label for="managed-password-repeat-interval">Repeat every</label>
+                    <div class="admin-form-grid">
+                        <input class="input-cell" id="managed-password-repeat-interval" type="number" min="1" max="3650">
+                        <select class="input-cell" id="managed-password-repeat-unit">
+                            <option value="" disabled hidden selected></option>
+                            <option value="week">Weeks</option>
+                            <option value="month">Months</option><option value="year">Years</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="admin-field" id="managed-password-weekday-field" hidden>
+                    <label>On weekdays</label>
+                    <div class="schedule-checkbox-grid" id="managed-password-weekdays"></div>
+                </div>
+                <div class="admin-field" id="managed-password-monthday-field" hidden>
+                    <label>On dates</label>
+                    <div class="schedule-checkbox-grid" id="managed-password-monthdays"></div>
+                </div>
+                <div class="admin-field" id="managed-password-year-month-field" hidden>
+                    <label>On months</label>
+                    <div class="schedule-checkbox-grid months" id="managed-password-year-months"></div>
+                </div>
+                </div>
+            </section>
+            <div class="admin-dialog-actions">
+                <button class="admin-action-button dialog-danger" id="btn-delete-managed-user" type="button">Delete user</button>
+                <button class="admin-action-button dialog-secondary" id="btn-cancel-user-management" type="button">Cancel</button>
+                <button class="admin-action-button" type="submit">Save</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog class="admin-dialog" id="link-dialog">
+        <h2 id="link-dialog-title">One-time link</h2>
+        <p id="link-dialog-note">Share this link with the user. It will not be shown again.</p>
+        <label for="generated-link">Link</label>
+        <input class="input-cell" id="generated-link" type="text" readonly>
+        <div class="admin-dialog-actions">
+            <button class="admin-action-button dialog-secondary" id="btn-close-link" type="button">Close</button>
+            <button class="admin-action-button" id="btn-copy-link" type="button">Copy link</button>
+        </div>
+    </dialog>
+
+    <script>
+        function initializeAdmin() {
+        const token = sessionStorage.getItem('ramiel_token');
+        const rawUser = (() => {
+            try {
+                return JSON.parse(sessionStorage.getItem('ramiel_user') || 'null');
+            } catch {
+                return null;
+            }
+        })();
+
+        const userObj = rawUser && (rawUser.role === 'admin' || rawUser.role === 'dev') ? rawUser : null;
+
+        if (!token || !userObj) {
+            window.location.replace('/');
+            return;
+        }
+
+        const settingsLabel = userObj.role === 'dev' ? 'Dev Settings' : 'Admin Settings';
+        document.title = `${settingsLabel} - RAMIEL`;
+        document.getElementById('page-title').textContent = settingsLabel;
+        document.getElementById('account-name').textContent = userObj.username || 'Admin';
+
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const toggleOpen = document.getElementById('sidebar-toggle-open');
+        const toggleClose = document.getElementById('sidebar-toggle-close');
+        const accountBtn = document.getElementById('account-btn');
+        const accountPopup = document.getElementById('account-popup');
+
+        function resetAuthState() {
+            sessionStorage.removeItem('ramiel_token');
+            sessionStorage.removeItem('ramiel_user');
+            localStorage.removeItem('ramiel_token');
+            localStorage.removeItem('ramiel_user');
+            window.location.href = '/';
+        }
+
+        function openSidebar() {
+            sidebar.classList.add('open');
+            sidebarOverlay.classList.add('show');
+            toggleOpen.classList.add('hidden');
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('show');
+            toggleOpen.classList.remove('hidden');
+        }
+
+        toggleOpen.classList.remove('hidden');
+
+        toggleOpen.addEventListener('click', openSidebar);
+        toggleClose.addEventListener('click', closeSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+
+        accountBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            accountPopup.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!accountPopup.contains(e.target) && !accountBtn.contains(e.target)) {
+                accountPopup.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('account-name').textContent = userObj.username || 'Admin';
+        accountBtn.classList.add('has-name');
+
+        const tableMeta = {
+            users: {
+                label: 'Users',
+                headers: ['Username', 'Status', 'Role', 'Company', 'Email', 'Account Expires', 'Password Expires', 'Actions']
+            },
+            invitations: {
+                label: 'Invitations',
+                headers: ['Email', 'Company', 'Department', 'Status', 'Invited By', 'Created', 'Expires', 'Action']
+            },
+            password_reset_requests: {
+                label: 'Password Reset Requests',
+                headers: ['Username', 'Email', 'Name', 'Company', 'Status', 'Requested', 'Action']
+            },
+            chat_sessions: {
+                label: 'Chat Sessions',
+                fields: ['id', 'user_id', 'title', 'created_at', 'updated_at'],
+                headers: ['ID', 'User ID', 'Title', 'Created At', 'Updated At']
+            },
+            chat_messages: {
+                label: 'Chat Messages',
+                fields: ['id', 'session_id', 'role', 'content', 'created_at'],
+                headers: ['ID', 'Session ID', 'Role', 'Content', 'Created At']
+            }
+        };
+
+        const currentUserRole = userObj ? userObj.role : 'admin';
+        const currentUserId = userObj ? Number(userObj.id) : null;
+        document.querySelector('.sidebar-brand').textContent = currentUserRole === 'dev' ? 'Dev Settings' : 'Admin Settings';
+
+        let activeTable = 'users';
+        let originalUsers = [];
+        let draftUsers = [];
+        let deletedIds = new Set();
+        let usersLoaded = false;
+        const invitationLinks = new Map();
+
+        function canManageRow(row) {
+            if (!row) return false;
+            if (currentUserRole === 'dev') return true;
+            if (currentUserRole === 'admin') return row.role !== 'dev';
+            return row.id === currentUserId;
+        }
+
+        function isProtectedDevRow(row) {
+            return row && row.role === 'dev';
+        }
+
+        const tableHead = document.getElementById('table-head');
+        const tableBody = document.getElementById('table-body');
+        const saveBar = document.getElementById('save-bar');
+        const btnSave = document.getElementById('btn-save');
+
+        function renderTableMeta() {
+            const meta = tableMeta[activeTable];
+                document.getElementById('page-title').textContent = meta.label;
+            tableHead.innerHTML = '<tr>' + meta.headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+            document.getElementById('btn-create-invitation').hidden = activeTable !== 'invitations';
+        }
+
+        function formatUserProfileValue(row, value) {
+            if (row.role === 'dev' && (value === null || value === undefined || value === '')) return '0';
+            return formatDbCell(value);
+        }
+
+        function getDisplayedAccountStatus(user) {
+            if (user.account_status !== 'active') return 'Suspended';
+            const expiry = user.account_expires_at ? new Date(String(user.account_expires_at).replace(' ', 'T')) : null;
+            return expiry && expiry <= new Date() ? 'Expired' : 'Active';
+        }
+
+
+
+        function renderUsersTable(rows) {
+            tableBody.innerHTML = '';
+            rows.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${formatDbCell(u.username)}</td>
+                    <td>${u.role === 'dev' ? 'Protected' : getDisplayedAccountStatus(u)}</td>
+                    <td>${formatDbCell(u.role)}</td>
+                    <td>${formatDbCell(u.company_name)}</td>
+                    <td>${formatDbCell(u.email)}</td>
+                    <td>${formatDbCell(String(u.account_expires_at || '').slice(0, 10))}</td>
+                    <td>${formatDbCell(String(u.password_expires_at || '').slice(0, 10))}</td>
+                    <td>${u.role === 'dev' || !canManageRow(u) ? '—' : `<button class="admin-action-button" data-manage-user="${Number(u.id)}" type="button">Manage</button>`}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function renderInvitationsTable(rows) {
+            tableBody.innerHTML = rows.length ? rows.map(row => `
+                <tr>
+                    <td>${formatDbCell(row.email)}</td>
+                    <td>${formatDbCell(row.company_name)}</td>
+                    <td>${formatDbCell(row.department)}</td>
+                    <td>${formatDbCell(row.status === 'pending' ? 'Invited' : row.status)}</td>
+                    <td>${formatDbCell(row.invited_by)}</td>
+                    <td>${formatDbCell(row.created_date)}</td>
+                    <td>${formatDbCell(row.expires_date)}</td>
+                    <td><div class="invitation-actions">${row.status === 'pending' ? (invitationLinks.has(Number(row.id))
+                        ? `<a class="invitation-link" href="${escapeHtml(invitationLinks.get(Number(row.id)))}" target="_blank" rel="noopener noreferrer">Open link</a><button class="invitation-copy" data-copy-invitation="${Number(row.id)}" type="button">Copy</button>`
+                        : `<button class="invitation-link" data-generate-invitation-link="${Number(row.id)}" type="button">Get link</button>`) : '—'}${row.status === 'pending' ? `<button class="admin-action-button" data-revoke-invitation="${Number(row.id)}" type="button">Revoke</button>` : ''}</div></td>
+                </tr>
+            `).join('') : `<tr><td colspan="8" class="empty-state">No invitations yet</td></tr>`;
+        }
+
+        function renderPasswordResetRequests(rows) {
+            tableBody.innerHTML = rows.length ? rows.map(row => `
+                <tr>
+                    <td>${formatDbCell(row.username)}</td>
+                    <td>${formatDbCell(row.email)}</td>
+                    <td>${formatDbCell(`${row.first_name || ''} ${row.last_name || ''}`.trim())}</td>
+                    <td>${formatDbCell(row.company_name)}</td>
+                    <td>${formatDbCell(row.status)}</td>
+                    <td>${formatDbCell(row.requested_date)}</td>
+                    <td>${row.status === 'requested' ? `<button class="admin-action-button" data-issue-reset="${Number(row.id)}" type="button">Issue reset link</button>` : '—'}</td>
+                </tr>
+            `).join('') : `<tr><td colspan="7" class="empty-state">No reset requests</td></tr>`;
+        }
+
+        function renderFallbackTable(type) {
+            const meta = tableMeta[type];
+            const rows = type === 'chat_sessions'
+                ? [{ id: 1, user_id: 2, title: 'Customer kickoff', updated_at: '2026-09-28 10:00:00' }, { id: 2, user_id: 1, title: 'Follow-up summary', updated_at: '2026-09-28 11:20:00' }]
+                : [{ id: 1, session_id: 1, role: 'user', content: 'Need pricing summary', created_at: '2026-09-28 09:15:00' }, { id: 2, session_id: 1, role: 'assistant', content: 'Here is the summary...', created_at: '2026-09-28 09:16:00' }];
+
+            tableBody.innerHTML = rows.map(item => {
+                return '<tr>' + meta.fields.map(field => `<td>${item[field] ?? '-'}</td>`).join('') + '</tr>';
+            }).join('');
+        }
+
+        function renderTable() {
+            renderTableMeta();
+            if (activeTable === 'users') {
+                renderUsersTable(draftUsers);
+                return;
+            }
+            if (activeTable === 'invitations') {
+                fetchInvitations();
+                return;
+            }
+            if (activeTable === 'password_reset_requests') {
+                fetchPasswordResetRequests();
+                return;
+            }
+            if (activeTable === 'chat_sessions') {
+                fetchChatSessions();
+                return;
+            }
+            if (activeTable === 'chat_messages') {
+                fetchChatMessages();
+                return;
+            }
+            renderFallbackTable(activeTable);
+        }
+
+        document.getElementById('sidebar-nav').addEventListener('click', (e) => {
+            const btn = e.target.closest('.nav-item');
+            if (!btn) return;
+            activeTable = btn.dataset.table;
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.toggle('active', item === btn));
+            renderTable();
+        });
+
+        async function fetchJson(endpoint, label) {
+            const res = await fetch(endpoint, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                let msg = `Failed to fetch ${label}.`;
+                try {
+                    const data = JSON.parse(text);
+                    if (data && data.detail) msg = data.detail;
+                } catch {}
+                throw new Error(msg);
+            }
+
+            return res.json();
+        }
+
+        async function fetchUsers() {
+            try {
+                const users = await fetchJson('/api/dev/users', 'users');
+                const data = currentUserRole === 'admin'
+                    ? users.filter(user => user.role !== 'dev')
+                    : users;
+                originalUsers = JSON.parse(JSON.stringify(data));
+                draftUsers = JSON.parse(JSON.stringify(data));
+                deletedIds.clear();
+                usersLoaded = true;
+                renderTable();
+                checkChanges();
+            } catch (e) {
+                alert('Cannot load users. Please restart the backend server and refresh the page.\n\n' + e.message);
+            }
+        }
+
+        async function fetchInvitations() {
+            try {
+                const rows = await fetchJson('/api/dev/invitations', 'invitations');
+                renderInvitationsTable(Array.isArray(rows) ? rows : []);
+            } catch (e) {
+                tableBody.innerHTML = `<tr><td colspan="8" class="empty-state">${escapeHtml(e.message)}</td></tr>`;
+            }
+        }
+
+        async function fetchPasswordResetRequests() {
+            try {
+                const rows = await fetchJson('/api/dev/password-reset-requests', 'password reset requests');
+                renderPasswordResetRequests(Array.isArray(rows) ? rows : []);
+            } catch (e) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="empty-state">${escapeHtml(e.message)}</td></tr>`;
+            }
+        }
+
+        async function fetchChatSessions() {
+            try {
+                const data = await fetchJson('/api/dev/chat-sessions', 'chat sessions');
+                const rows = Array.isArray(data) ? data : [];
+                renderDatabaseTable(rows);
+            } catch (e) {
+                alert('Cannot load chat sessions. Please restart the backend server and refresh the page.\n\n' + e.message);
+            }
+        }
+
+        async function fetchChatMessages() {
+            try {
+                const data = await fetchJson('/api/dev/chat-messages', 'chat messages');
+                const rows = Array.isArray(data) ? data : [];
+                renderDatabaseTable(rows);
+            } catch (e) {
+                alert('Cannot load chat messages. Please restart the backend server and refresh the page.\n\n' + e.message);
+            }
+        }
+
+        async function sendAdminRequest(endpoint, method, payload) {
+            const res = await fetch(endpoint, {
+                method,
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    ...(payload ? { 'Content-Type': 'application/json' } : {})
+                },
+                ...(payload ? { body: JSON.stringify(payload) } : {})
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || data.error || 'Request failed.');
+            return data;
+        }
+
+        function showOneTimeLink(data, title) {
+            document.getElementById('link-dialog-title').textContent = title;
+            document.getElementById('link-dialog-note').textContent = `${data.message} Expires ${data.expires_date || `in ${data.expires_in_minutes} minutes`}.`;
+            document.getElementById('generated-link').value = new URL(data.url, location.origin).href;
+            document.getElementById('link-dialog').showModal();
+        }
+
+        const userManagementDialog = document.getElementById('user-management-dialog');
+        let managedUserId = null;
+        const accountExpiryMode = document.getElementById('managed-account-expiry-mode');
+        const passwordPolicyType = document.getElementById('managed-password-policy');
+        const passwordPolicyRepeat = document.getElementById('managed-password-repeat');
+        const passwordRepeatUnit = document.getElementById('managed-password-repeat-unit');
+        const deleteManagedUserButton = document.getElementById('btn-delete-managed-user');
+        const weekdayOptions = [
+            { value: 1, label: 'Monday' }, { value: 2, label: 'Tuesday' },
+            { value: 3, label: 'Wednesday' }, { value: 4, label: 'Thursday' },
+            { value: 5, label: 'Friday' }, { value: 6, label: 'Saturday' },
+            { value: 7, label: 'Sunday' },
+        ];
+        const monthOptions = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December',
+        ].map((label, index) => ({ value: index + 1, label }));
+
+        function setScheduleCheckboxes(containerId, options, selectedValues = []) {
+            const container = document.getElementById(containerId);
+            const selected = new Set(selectedValues.map(String));
+            container.replaceChildren();
+            options.forEach(option => {
+                const label = document.createElement('label');
+                label.className = 'schedule-option';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = String(option.value);
+                checkbox.checked = selected.has(checkbox.value);
+                label.classList.toggle('selected', checkbox.checked);
+                checkbox.addEventListener('change', () => label.classList.toggle('selected', checkbox.checked));
+                const text = document.createElement('span');
+                text.textContent = option.label;
+                label.append(checkbox, text);
+                container.append(label);
+            });
+        }
+
+        function getScheduleCheckboxes(containerId) {
+            return [...document.querySelectorAll(`#${containerId} input:checked`)].map(input => Number(input.value));
+        }
+
+        function updateLifecycleFields() {
+            document.getElementById('managed-account-months-field').hidden = accountExpiryMode.value !== 'duration';
+            document.getElementById('managed-account-date-field').hidden = accountExpiryMode.value !== 'date';
+            const hasPasswordExpiry = passwordPolicyType.value !== '' && passwordPolicyType.value !== 'none';
+            document.getElementById('managed-password-repeat-field').hidden = !hasPasswordExpiry;
+            document.getElementById('managed-password-spacer-field').hidden = !hasPasswordExpiry;
+            document.getElementById('managed-password-duration-field').hidden = passwordPolicyType.value !== 'duration';
+            document.getElementById('managed-password-date-field').hidden = passwordPolicyType.value !== 'date' || passwordPolicyRepeat.value !== 'once';
+            document.getElementById('managed-password-repeat-schedule').hidden = passwordPolicyType.value !== 'date' || passwordPolicyRepeat.value !== 'repeat';
+            const repeatUnit = passwordRepeatUnit.value;
+            document.getElementById('managed-password-weekday-field').hidden = repeatUnit !== 'week' || passwordPolicyType.value !== 'date' || passwordPolicyRepeat.value !== 'repeat';
+            document.getElementById('managed-password-monthday-field').hidden = !['month', 'year'].includes(repeatUnit) || passwordPolicyType.value !== 'date' || passwordPolicyRepeat.value !== 'repeat';
+            document.getElementById('managed-password-year-month-field').hidden = repeatUnit !== 'year' || passwordPolicyType.value !== 'date' || passwordPolicyRepeat.value !== 'repeat';
+        }
+
+        function updateAccountStatusStyle() {
+            const statusInput = document.getElementById('managed-account-status');
+            statusInput.classList.remove('status-active', 'status-suspended', 'status-deactivated');
+            statusInput.classList.add(`status-${statusInput.value}`);
+        }
+        function formatTimeLeft(dateStr) {
+            if (!dateStr) return '-';
+            const diffSecs = Math.floor((new Date(dateStr) - new Date()) / 1000);
+            if (diffSecs <= 0) return 'Expired';
+            if (diffSecs >= 86400) return `${Math.floor(diffSecs / 86400)} days`;
+            if (diffSecs >= 3600) return `${Math.floor(diffSecs / 3600)} hours`;
+            if (diffSecs >= 60) return `${Math.floor(diffSecs / 60)} minutes`;
+            return `${diffSecs} seconds`;
+        }
+
+        function formatDateDMY(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+        }
+
+        function openUserManagement(userId) {
+            const user = draftUsers.find(row => Number(row.id) === userId);
+            if (!user || !canManageRow(user)) return;
+            managedUserId = userId;
+            document.getElementById('user-management-title').textContent = `Manage ${user.username} (ID ${user.id})`;
+            document.getElementById('managed-username').value = user.username || '';
+            document.getElementById('managed-role').value = user.role || 'user';
+            document.getElementById('managed-email').value = user.email || '';
+            document.getElementById('managed-company').value = user.company_name || '';
+            document.getElementById('managed-first-name').value = user.first_name || '';
+            document.getElementById('managed-last-name').value = user.last_name || '';
+            document.getElementById('managed-created-date').value = String(user.created_at || '').slice(0, 10);
+            document.getElementById('managed-department').value = user.department || '';
+            document.getElementById('managed-phone').value = user.phone || '';
+            document.getElementById('managed-account-expires-in').value = formatTimeLeft(user.account_expires_at);
+            document.getElementById('managed-account-expires-date').value = formatDateDMY(user.account_expires_at);
+            document.getElementById('managed-password-expires-in').value = formatTimeLeft(user.password_expires_at);
+            document.getElementById('managed-password-expires-date').value = formatDateDMY(user.password_expires_at);
+            document.getElementById('managed-account-status').value = user.account_status || 'active';
+            document.getElementById('managed-account-status').disabled = userId === currentUserId;
+            updateAccountStatusStyle();
+            accountExpiryMode.value = user.account_expiry_mode || (user.account_expires_at ? 'date' : 'none');
+            document.getElementById('managed-account-duration').value = user.account_expiry_duration || 3;
+            document.getElementById('managed-account-date').value = user.account_expires_at ? String(user.account_expires_at).slice(0, 10) : '';
+            passwordPolicyType.value = user.password_policy_type && user.password_policy_type !== 'none'
+                ? user.password_policy_type : '';
+            passwordPolicyRepeat.value = user.password_policy_repeat || 'once';
+            document.getElementById('managed-password-duration').value = user.password_policy_interval || 2;
+            document.getElementById('managed-password-date').value = user.password_policy_date ? String(user.password_policy_date).slice(0, 10) : '';
+            document.getElementById('managed-password-repeat-interval').value = user.password_policy_interval || 1;
+            passwordRepeatUnit.value = user.password_policy_unit || 'month';
+            const schedule = Array.isArray(user.password_policy_schedule) ? user.password_policy_schedule : [];
+            setScheduleCheckboxes('managed-password-weekdays', weekdayOptions,
+                user.password_policy_unit === 'week' ? schedule : []);
+            setScheduleCheckboxes('managed-password-monthdays',
+                Array.from({ length: 31 }, (_, index) => ({ value: index + 1, label: String(index + 1) })),
+                user.password_policy_unit === 'month' ? schedule : user.password_policy_unit === 'year' ? schedule.map(item => item.day) : []);
+            setScheduleCheckboxes('managed-password-year-months', monthOptions,
+                user.password_policy_unit === 'year' ? [...new Set(schedule.map(item => item.month))] : []);
+            deleteManagedUserButton.hidden = userId === currentUserId;
+            updateLifecycleFields();
+            userManagementDialog.showModal();
+            document.getElementById('user-management-title').focus({ preventScroll: true });
+        }
+
+        accountExpiryMode.addEventListener('change', updateLifecycleFields);
+        passwordPolicyType.addEventListener('change', updateLifecycleFields);
+        passwordPolicyRepeat.addEventListener('change', updateLifecycleFields);
+        passwordRepeatUnit.addEventListener('change', updateLifecycleFields);
+        document.getElementById('managed-account-status').addEventListener('change', updateAccountStatusStyle);
+        document.getElementById('btn-cancel-user-management').addEventListener('click', () => userManagementDialog.close());
+
+        document.getElementById('user-management-form').addEventListener('submit', async event => {
+            event.preventDefault();
+            const submitButton = event.currentTarget.querySelector('[type="submit"]');
+            submitButton.disabled = true;
+            const policy = passwordPolicyType.value;
+            let policySchedule = [];
+            if (policy === 'date' && passwordPolicyRepeat.value === 'repeat') {
+                if (passwordRepeatUnit.value === 'week') {
+                    policySchedule = getScheduleCheckboxes('managed-password-weekdays');
+                } else if (passwordRepeatUnit.value === 'month') {
+                    policySchedule = getScheduleCheckboxes('managed-password-monthdays');
+                } else if (passwordRepeatUnit.value === 'year') {
+                    const dates = getScheduleCheckboxes('managed-password-monthdays');
+                    const months = getScheduleCheckboxes('managed-password-year-months');
+                    policySchedule = months.flatMap(month => dates.map(day => ({ month, day })));
+                }
+            }
+            const payload = {
+                username: document.getElementById('managed-username').value.trim(),
+                role: document.getElementById('managed-role').value,
+                email: document.getElementById('managed-email').value.trim(),
+                password: document.getElementById('managed-new-password').value || undefined,
+                company_name: document.getElementById('managed-company').value.trim(),
+                first_name: document.getElementById('managed-first-name').value.trim(),
+                last_name: document.getElementById('managed-last-name').value.trim(),
+                department: document.getElementById('managed-department').value.trim(),
+                phone: document.getElementById('managed-phone').value.trim(),
+                account_status: document.getElementById('managed-account-status').value,
+                account_expiry_mode: accountExpiryMode.value,
+                account_expiry_duration: accountExpiryMode.value === 'duration'
+                    ? Number(document.getElementById('managed-account-duration').value) : null,
+                account_expiry_unit: accountExpiryMode.value === 'duration'
+                    ? 'day' : null,
+                account_expiry_date: accountExpiryMode.value === 'date'
+                    ? document.getElementById('managed-account-date').value : null,
+                password_policy_type: policy || null,
+                password_policy_repeat: policy ? (policy === 'none' ? 'once' : passwordPolicyRepeat.value) : null,
+                password_policy_interval: policy === 'duration'
+                    ? Number(document.getElementById('managed-password-duration').value)
+                    : policy === 'date' && passwordPolicyRepeat.value === 'repeat'
+                        ? Number(document.getElementById('managed-password-repeat-interval').value) : null,
+                password_policy_unit: policy === 'duration'
+                    ? 'day'
+                    : policy === 'date' && passwordPolicyRepeat.value === 'repeat'
+                        ? passwordRepeatUnit.value : null,
+                password_policy_on: policySchedule.length && typeof policySchedule[0] === 'number'
+                    ? policySchedule[0] : policySchedule.length && policySchedule[0].day ? policySchedule[0].day : null,
+                password_policy_month: policySchedule.length && typeof policySchedule[0] === 'object'
+                    ? policySchedule[0].month : null,
+                password_policy_date: policy === 'date' && passwordPolicyRepeat.value === 'once'
+                    ? document.getElementById('managed-password-date').value : null,
+                password_policy_schedule: policy ? policySchedule : null,
+            };
+            try {
+                await sendAdminRequest(`/api/dev/users/${managedUserId}`, 'PUT', payload);
+                userManagementDialog.close();
+                await fetchUsers();
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+        
+        document.getElementById('btn-admin-send-reset-link').addEventListener('click', async () => {
+            const btn = document.getElementById('btn-admin-send-reset-link');
+            if (!confirm('Are you sure you want to generate a password reset link for this user?')) return;
+            btn.disabled = true;
+            try {
+                const res = await sendAdminRequest(`/api/dev/users/${managedUserId}/send-reset`, 'POST');
+                if (res.url) {
+                    showOneTimeLink(res.url, 'Password Reset Link');
+                } else {
+                    alert(res.message || 'Password reset link generated.');
+                }
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+
+        deleteManagedUserButton.addEventListener('click', async () => {
+            const user = draftUsers.find(row => Number(row.id) === managedUserId);
+            if (!user || !confirm(`Delete ${user.username} permanently? This cannot be undone.`)) return;
+            deleteManagedUserButton.disabled = true;
+            try {
+                await sendAdminRequest(`/api/dev/users/${managedUserId}`, 'DELETE');
+                userManagementDialog.close();
+                await fetchUsers();
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                deleteManagedUserButton.disabled = false;
+            }
+        });
+
+        const invitationDialog = document.getElementById('invitation-dialog');
+        document.getElementById('btn-create-invitation').addEventListener('click', () => invitationDialog.showModal());
+        document.getElementById('btn-cancel-invitation').addEventListener('click', () => invitationDialog.close());
+        document.getElementById('invitation-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const submitButton = event.currentTarget.querySelector('[type="submit"]');
+            submitButton.disabled = true;
+            try {
+                const data = await sendAdminRequest('/api/dev/invitations', 'POST', {
+                    email: document.getElementById('invite-email').value.trim(),
+                    company_name: document.getElementById('invite-company').value.trim(),
+                    department: document.getElementById('invite-department').value.trim()
+                });
+                invitationDialog.close();
+                document.getElementById('invitation-form').reset();
+                invitationLinks.set(Number(data.invitation_id), new URL(data.url, location.origin).href);
+                await fetchInvitations();
+            } catch (e) {
+                alert(e.message);
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+
+        document.getElementById('btn-close-link').addEventListener('click', () => {
+            document.getElementById('link-dialog').close();
+        });
+        document.getElementById('btn-copy-link').addEventListener('click', async () => {
+            const link = document.getElementById('generated-link');
+            try {
+                await navigator.clipboard.writeText(link.value);
+            } catch {
+                link.select();
+                document.execCommand('copy');
+            }
+            document.getElementById('btn-copy-link').textContent = 'Copied';
+        });
+
+        tableBody.addEventListener('click', async (event) => {
+            const manageUserButton = event.target.closest('[data-manage-user]');
+            const revokeButton = event.target.closest('[data-revoke-invitation]');
+            const resetButton = event.target.closest('[data-issue-reset]');
+            const generateInvitationLinkButton = event.target.closest('[data-generate-invitation-link]');
+            const copyInvitationButton = event.target.closest('[data-copy-invitation]');
+            if (manageUserButton) {
+                openUserManagement(Number(manageUserButton.dataset.manageUser));
+                return;
+            }
+            if (!revokeButton && !resetButton && !generateInvitationLinkButton && !copyInvitationButton) return;
+            const button = revokeButton || resetButton || generateInvitationLinkButton || copyInvitationButton;
+            button.disabled = true;
+            try {
+                if (generateInvitationLinkButton) {
+                    const invitationId = Number(generateInvitationLinkButton.dataset.generateInvitationLink);
+                    const data = await sendAdminRequest(`/api/dev/invitations/${invitationId}/link`, 'POST');
+                    invitationLinks.set(invitationId, new URL(data.url, location.origin).href);
+                    await fetchInvitations();
+                } else if (copyInvitationButton) {
+                    const invitationId = Number(copyInvitationButton.dataset.copyInvitation);
+                    const url = invitationLinks.get(invitationId);
+                    try {
+                        await navigator.clipboard.writeText(url);
+                    } catch {
+                        const copyField = document.createElement('textarea');
+                        copyField.value = url;
+                        document.body.appendChild(copyField);
+                        copyField.select();
+                        document.execCommand('copy');
+                        copyField.remove();
+                    }
+                    copyInvitationButton.textContent = 'Copied';
+                    copyInvitationButton.disabled = false;
+                } else if (revokeButton) {
+                    await sendAdminRequest(`/api/dev/invitations/${revokeButton.dataset.revokeInvitation}`, 'DELETE');
+                    invitationLinks.delete(Number(revokeButton.dataset.revokeInvitation));
+                    await fetchInvitations();
+                } else {
+                    const data = await sendAdminRequest(`/api/dev/password-reset-requests/${resetButton.dataset.issueReset}/issue`, 'POST');
+                    showOneTimeLink(data, 'Password reset link');
+                    await fetchPasswordResetRequests();
+                }
+            } catch (e) {
+                alert(e.message);
+                button.disabled = false;
+            }
+        });
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function formatDbCell(value) {
+            if (value === null || value === undefined || value === '') return '—';
+            const text = String(value).trim();
+            if (text.length > 180) {
+                return `<span class="cell-truncate" title="${escapeHtml(text)}">${escapeHtml(text.slice(0, 180))}...</span>`;
+            }
+            return escapeHtml(text);
+        }
+
+        function renderDatabaseTable(rows) {
+            const meta = tableMeta[activeTable];
+            tableBody.innerHTML = rows.length
+                ? rows.map(row => {
+                    const cells = meta.fields.map(field => `<td>${formatDbCell(row[field])}</td>`).join('');
+                    return `<tr>${cells}</tr>`;
+                }).join('')
+                : `<tr><td colspan="${meta.headers.length}" class="empty-state">No data found</td></tr>`;
+        }
+
+        window.updateField = function(index, field, value) {
+            const row = draftUsers[index];
+            if (!row) return;
+            if (isProtectedDevRow(row)) {
+                return;
+            }
+
+            row[field] = value;
+            checkChanges();
+
+            const tr = tableBody.children[index];
+            if (!tr) return;
+            const input = tr.querySelector(`input[oninput*="'${field}'"]`);
+            if (!input) return;
+
+            const orig = originalUsers.find(x => x.id === row.id) || {};
+            if (value !== orig[field] && !(field === 'password' && !value && row.id)) {
+                input.classList.add('changed');
+            } else {
+                input.classList.remove('changed');
+            }
+        };
+
+        function checkChanges() {
+            if (!usersLoaded || activeTable !== 'users') {
+                saveBar.classList.remove('visible');
+                return;
+            }
+
+            let hasChanges = deletedIds.size > 0;
+            if (!hasChanges) {
+                for (const u of draftUsers) {
+                    if (isProtectedDevRow(u)) {
+                        continue;
+                    }
+                    const orig = originalUsers.find(x => x.id === u.id);
+                    if (!orig) {
+                        hasChanges = true;
+                        break;
+                    }
+                    const editableFields = ['username', 'email', 'role', 'first_name', 'last_name', 'company_name', 'department', 'phone'];
+                    if (editableFields.some(field => orig[field] !== u[field]) || u.password) {
+                        hasChanges = true;
+                        break;
+                    }
+                }
+            }
+
+            let isValid = true;
+            for (const u of draftUsers) {
+                if (isProtectedDevRow(u)) {
+                    continue;
+                }
+                if (!u.username || !u.email || !u.role) isValid = false;
+            }
+
+            if (hasChanges) {
+                saveBar.classList.add('visible');
+                btnSave.disabled = !isValid;
+            } else {
+                saveBar.classList.remove('visible');
+            }
+        }
+
+        document.getElementById('btn-discard').addEventListener('click', () => {
+            resetAuthState();
+        });
+
+        document.getElementById('btn-save').addEventListener('click', async () => {
+            btnSave.disabled = true;
+            btnSave.textContent = 'Saving...';
+
+            try {
+                for (const id of deletedIds) {
+                    const affected = draftUsers.find(u => u.id === id);
+                    if (affected && isProtectedDevRow(affected)) {
+                        continue;
+                    }
+                    await fetch('/api/dev/users/' + id, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                }
+                for (const u of draftUsers) {
+                    if (isProtectedDevRow(u)) {
+                        continue;
+                    }
+                    if (deletedIds.has(u.id)) continue;
+                    if (!u.id) {
+                        const res = await fetch('/api/dev/users', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                            body: JSON.stringify({ username: u.username, email: u.email, password: u.password, role: u.role })
+                        });
+                        if (!res.ok) {
+                            const err = await res.json();
+                            throw new Error(err.error || 'Failed to create ' + u.username);
+                        }
+                    } else {
+                        const orig = originalUsers.find(x => x.id === u.id);
+                        const updates = {};
+                        ['username', 'email', 'role', 'first_name', 'last_name', 'company_name', 'department', 'phone'].forEach(field => {
+                            if ((u[field] || '') !== (orig[field] || '')) updates[field] = u[field] || '';
+                        });
+                        if (u.password) updates.password = u.password;
+                        if (Object.keys(updates).length > 0) {
+                            const res = await fetch('/api/dev/users/' + u.id, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                                body: JSON.stringify(updates)
+                            });
+                            if (!res.ok) {
+                                const err = await res.json();
+                                throw new Error(err.error || 'Failed to update ' + u.username);
+                            }
+                        }
+                    }
+                }
+                await fetchUsers();
+            } catch (e) {
+                alert('Save failed: ' + e.message);
+            } finally {
+                btnSave.textContent = 'Save Changes';
+                checkChanges();
+            }
+        });
+
+        document.getElementById('btn-back-to-chat').addEventListener('click', () => {
+            window.location.href = '/';
+        });
+
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            resetAuthState();
+        });
+
+        document.getElementById('btn-delete-account').addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to delete your account?')) return;
+            try {
+                const res = await fetch('/api/auth/account', {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Delete failed');
+                resetAuthState();
+            } catch (e) {
+                alert(e.message);
+            }
+        });
+
+        const themeBtns   = document.querySelectorAll('.theme-btn');
+        const themeSlider = document.getElementById('theme-slider');
+        let originalCSS = '';
+
+        async function initThemeSwitcher() {
+            if (!themeBtns.length) return;
+            try { const res = await fetch('styles.css?v=' + Date.now()); originalCSS = await res.text(); } catch {}
+            const savedTheme = localStorage.getItem('ramiel_theme');
+            if (['dark', 'ash', 'light'].includes(savedTheme)) {
+                themeBtns.forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-theme') === savedTheme));
+                applyAlgorithmicTheme(savedTheme);
+            }
+            const activeBtn = document.querySelector('.theme-btn.active');
+            if (activeBtn) {
+                themeSlider.style.width = activeBtn.offsetWidth + 'px';
+                themeSlider.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
+            }
+            themeBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    themeBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    themeSlider.style.width = btn.offsetWidth + 'px';
+                    themeSlider.style.transform = `translateX(${btn.offsetLeft - 4}px)`;
+                    applyAlgorithmicTheme(btn.getAttribute('data-theme'));
+                });
+            });
+        }
+
+        function applyAlgorithmicTheme(theme) {
+            if (!['dark', 'ash', 'light'].includes(theme)) return;
+            localStorage.setItem('ramiel_theme', theme);
+            let dynamicStyle = document.getElementById('dynamic-theme');
+            if (!dynamicStyle) { dynamicStyle = document.createElement('style'); dynamicStyle.id = 'dynamic-theme'; document.head.appendChild(dynamicStyle); }
+            if (theme === 'dark') { dynamicStyle.textContent = ''; return; }
+            const hslRegex = /--L[a-zA-Z0-9]+:\s*hsl\(\s*(\d+),\s*([\d.]+)%,\s*([\d.]+)%\)/g;
+            dynamicStyle.textContent = originalCSS.replace(hslRegex, (match, h, s, l) => {
+                l = parseFloat(l); const varName = match.split(':')[0];
+                if (theme === 'light') return `${varName}: hsl(${h}, ${s}%, ${100 - l}%)`;
+                if (theme === 'ash') { s = parseFloat(s); let newL = Math.min(100, l * 2); if (l === 0) newL = 30; return `${varName}: hsl(${h}, ${s}%, ${newL}%)`; }
+                return match;
+            });
+        }
+
+        renderTable();
+        initThemeSwitcher();
+        fetchUsers();
+        }
+
+        initializeAdmin();
+    </script>
+</body>
+</html>

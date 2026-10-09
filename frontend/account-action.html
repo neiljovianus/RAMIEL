@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Setup - RAMIEL</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 84px 24px 24px; overflow-x: hidden; overflow-y: auto; background: var(--L0); color: var(--L80); font-family: 'Inter', sans-serif; }
+        body.account-action-page { height: auto; min-height: 100vh; overflow-x: hidden; overflow-y: auto; }
+        .account-theme { position: fixed; top: 20px; right: 20px; z-index: 5; }
+        .account-action { width: min(480px, 100%); padding: 32px; box-sizing: border-box; background: var(--L5); border: 1px solid var(--L20); border-radius: 16px; box-shadow: 0 12px 36px rgba(0,0,0,0.18); }
+        .account-action.mode-reset { width: min(400px, 100%); padding: 40px; }
+        .account-action h1 { margin: 0 0 8px; color: var(--L100); font-size: 1.35rem; }
+        .account-action p { color: var(--L60); line-height: 1.5; font-size: 0.9rem; }
+        .account-action label { display: block; margin: 12px 0 5px; color: var(--L60); font-size: 0.85rem; }
+        .account-action input, .account-action select { width: 100%; height: 42px; box-sizing: border-box; background: var(--L10); border: 1px solid var(--L20); border-radius: 8px; padding: 10px 14px; color: var(--L80); font: 0.95rem 'Inter', sans-serif; outline: none; transition: border-color 0.2s; }
+        .account-action input:focus { border-color: var(--L50); }
+        .account-action select:focus { border-color: var(--L50); }
+        .account-action button { width: 100%; margin-top: 18px; padding: 11px 14px; border: 0; border-radius: 6px; background: var(--accent); color: #fff; font: 600 0.9rem 'Inter', sans-serif; cursor: pointer; }
+        .account-action button:disabled { opacity: 0.55; cursor: wait; }
+        .account-otp-row { display: grid; grid-template-columns: minmax(0, 1fr) 124px; gap: 8px; align-items: center; }
+        #otp-field { grid-column: 1 / -1; }
+        .account-otp-row button { width: 124px; height: 42px; margin-top: 0; padding: 8px; font-size: 0.8rem; }
+        .account-otp-row button.cooldown { background: var(--L20); color: var(--L50); }
+        .account-action a { color: var(--accent); }
+        .invited-email { margin: 0 0 16px; color: var(--L80) !important; font-weight: 600; overflow-wrap: anywhere; }
+        #account-form:not([hidden]) { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+        .profile-fields { display: grid; grid-column: 1 / -1; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+        #username-field { grid-column: 1 / -1; }
+        .field-hint { margin: 6px 0 0; color: var(--L50) !important; font-size: 0.78rem !important; }
+        .username-status { min-height: 1.1em; margin: 4px 0 0; color: var(--L50) !important; font-size: 0.8rem !important; }
+        .username-status.available { color: #4caf50 !important; }
+        .username-status.unavailable { color: #f44336 !important; }
+        .phone-input { display: grid; grid-template-columns: minmax(145px, 0.85fr) minmax(0, 1.5fr); gap: 8px; }
+        .credential-fields { display: grid; grid-column: 1 / -1; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+        .credential-fields > div { min-width: 0; }
+        .password-rules { display: grid; grid-template-columns: 1fr; gap: 6px; margin: 10px 0 16px; padding: 0; list-style: none; }
+        .password-rule { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--L50); font-size: 0.78rem; line-height: 1.35; }
+        .password-rule-icon { flex: 0 0 14px; font-size: 0.85rem; font-weight: 700; text-align: center; }
+        .password-rule.valid { color: #4caf50; }
+        .password-rule.invalid { color: #f44336; }
+        #status, #submit-action { grid-column: 1 / -1; }
+        #status { margin: 10px 0 0; }
+        #status { min-height: 1.2em; }
+        #status.error { color: #f06b69; }
+        #page-title[hidden], #account-summary[hidden], #account-form[hidden], #username-field[hidden], #profile-fields[hidden], #otp-field[hidden], #phone-field[hidden], #invited-email[hidden], #success-link[hidden] { display: none; }
+        #account-form.mode-reset:not([hidden]) { display: flex; flex-direction: column; gap: 8px; margin: 0; max-width: 100%; }
+        #account-form.mode-reset .credential-fields { display: flex; flex-direction: column; gap: 8px; }
+        #account-form.mode-reset .password-rules { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; grid-auto-flow: column; gap: 4px; margin: 4px 0 8px; }
+        #account-form.mode-reset #submit-action { width: 50%; margin: 8px auto 0; }
+        @media (max-width: 560px) {
+            body { padding: 82px 16px 24px; }
+            .account-theme { top: 12px; right: 12px; }
+            .account-action { padding: 24px; }
+            .account-action.mode-reset { padding: 24px; }
+            #account-form:not([hidden]), .profile-fields, .credential-fields { grid-template-columns: 1fr; }
+            .password-rules { grid-template-columns: 1fr; }
+            .phone-input { grid-template-columns: minmax(120px, 0.9fr) minmax(0, 1.4fr); }
+        }
+        @media (max-width: 380px) { .password-rules { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body class="theme-dark account-action-page">
+    <div class="account-theme">
+        <div class="theme-switcher" role="group" aria-label="Color theme">
+            <div class="theme-slider" id="theme-slider"></div>
+            <button class="theme-btn active" type="button" data-theme="dark" aria-pressed="true">Dark</button>
+            <button class="theme-btn" type="button" data-theme="ash" aria-pressed="false">Ash</button>
+            <button class="theme-btn" type="button" data-theme="light" aria-pressed="false">Light</button>
+        </div>
+    </div>
+    <main class="account-action">
+        <h1 id="page-title">Account setup</h1>
+        <p id="invited-email" class="invited-email" hidden></p>
+        <p id="account-summary">Checking your secure link...</p>
+        <form id="account-form" hidden>
+            <div id="profile-fields" class="profile-fields" hidden>
+                <div>
+                    <label for="first-name">First name</label>
+                    <input class="input-cell" id="first-name" name="first_name" autocomplete="given-name" maxlength="100">
+                </div>
+                <div>
+                    <label for="last-name">Last name</label>
+                    <input class="input-cell" id="last-name" name="last_name" autocomplete="family-name" maxlength="100">
+                </div>
+            </div>
+            <div id="username-field" hidden>
+                <label for="username">Username</label>
+                <input class="input-cell" id="username" name="username" autocomplete="username" minlength="3" maxlength="30">
+                <p class="field-hint">3-30 characters: lowercase a-z and underscore only.</p>
+                <p class="username-status" id="username-status" aria-live="polite"></p>
+            </div>
+            <div id="otp-field" hidden>
+                <label for="invitation-otp">Email verification code</label>
+                <div class="account-otp-row" style="align-items: start;">
+                    <div style="display:flex; flex-direction:column;">
+                        <input class="input-cell" id="invitation-otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code" style="margin-bottom:0;">
+                        <div id="invitation-otp-plain" style="display:none; font-size:0.85rem; color:var(--L80); font-weight:600; text-align:left; margin-top: 4px;"></div>
+                    </div>
+                    <button id="btn-send-invitation-otp" type="button">Send OTP</button>
+                </div>
+            </div>
+            <div id="phone-field" class="phone-field" style="grid-column: 1 / -1;">
+                <label for="phone-number">Phone (optional)</label>
+                <div class="phone-input">
+                    <select id="phone-country-code" aria-label="Phone country code">
+                        <option value="+62" selected>Indonesia (+62)</option>
+                        <option value="+65">Singapore (+65)</option>
+                        <option value="+60">Malaysia (+60)</option>
+                        <option value="+673">Brunei (+673)</option>
+                        <option value="+61">Australia (+61)</option>
+                        <option value="+1">US/Canada (+1)</option>
+                        <option value="+44">United Kingdom (+44)</option>
+                        <option value="+91">India (+91)</option>
+                        <option value="+971">UAE (+971)</option>
+                    </select>
+                    <input class="input-cell" id="phone-number" type="tel" autocomplete="tel-national" inputmode="tel" placeholder="81234567890" maxlength="24">
+                </div>
+                <p class="field-hint">Enter the number without the country code; a leading 0 is okay.</p>
+            </div>
+            <div class="credential-fields">
+                <div>
+                    <label for="password">New password</label>
+                    <div class="password-wrapper">
+                        <input class="input-cell" id="password" name="password" type="password" autocomplete="new-password" required minlength="8" style="margin-bottom:0; padding-right:40px;">
+                        <span class="password-toggle" onclick="togglePassword('password', this)" style="top:50%; transform:translateY(-50%);">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </span>
+                    </div>
+                    <ul class="password-rules" id="password-rules" aria-label="Password requirements">
+                        <li class="password-rule" id="rule-pw-len"><span class="password-rule-icon" aria-hidden="true">○</span><span>Min 8 characters</span></li>
+                        <li class="password-rule" id="rule-pw-case"><span class="password-rule-icon" aria-hidden="true">○</span><span>Uppercase &amp; lowercase</span></li>
+                        <li class="password-rule" id="rule-pw-num"><span class="password-rule-icon" aria-hidden="true">○</span><span>At least 1 number</span></li>
+                        <li class="password-rule" id="rule-pw-sym"><span class="password-rule-icon" aria-hidden="true">○</span><span>At least 1 symbol</span></li>
+                    </ul>
+                </div>
+                <div>
+                    <label for="confirm-password">Repeat new password</label>
+                    <div class="password-wrapper">
+                        <input class="input-cell" id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" required minlength="8" style="margin-bottom:0; padding-right:40px;">
+                        <span class="password-toggle" onclick="togglePassword('confirm-password', this)" style="top:50%; transform:translateY(-50%);">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <p id="status" role="status"></p>
+            <button id="submit-action" type="submit">Continue</button>
+        </form>
+        <p id="success-link" hidden><a href="/">Return to RAMIEL</a></p>
+    </main>
+    <script>
+        const originalFetch = window.fetch;
+        window.fetch = function() {
+            let [resource, config] = arguments;
+            if (!config) config = {};
+            if (!config.headers) config.headers = {};
+            if (config.headers instanceof Headers) {
+                config.headers.append('X-Requested-With', 'XMLHttpRequest');
+                config.headers.append('X-Tunnel-Skip-AntiPhishing-Page', 'true');
+            } else {
+                config.headers['X-Requested-With'] = 'XMLHttpRequest';
+                config.headers['X-Tunnel-Skip-AntiPhishing-Page'] = 'true';
+            }
+            return originalFetch(resource, config);
+        };
+        (() => {
+            const params = new URLSearchParams(location.search);
+            const mode = params.get('mode');
+            const token = params.get('token');
+            const title = document.getElementById('page-title');
+            const summary = document.getElementById('account-summary');
+            const form = document.getElementById('account-form');
+            const status = document.getElementById('status');
+            const usernameField = document.getElementById('username-field');
+            const profileFields = document.getElementById('profile-fields');
+            const invitedEmail = document.getElementById('invited-email');
+            const button = document.getElementById('submit-action');
+            const themeButtons = document.querySelectorAll('.theme-btn');
+            const themeSlider = document.getElementById('theme-slider');
+            const passwordInput = document.getElementById('password');
+            const usernameInput = document.getElementById('username');
+            const usernameStatus = document.getElementById('username-status');
+            const otpField = document.getElementById('otp-field');
+            const otpInput = document.getElementById('invitation-otp');
+            const otpButton = document.getElementById('btn-send-invitation-otp');
+            let originalCSS = '';
+            let usernameCheckTimer = null;
+            let usernameCheckSequence = 0;
+            let otpTimer = null;
+
+            window.togglePassword = function(inputId, iconSpan) {
+                const input = document.getElementById(inputId);
+                const svg = iconSpan.querySelector('svg');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    svg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+                } else {
+                    input.type = 'password';
+                    svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+                }
+            };
+
+            function startOtpCountdown(seconds) {
+                clearInterval(otpTimer);
+                let remaining = Math.max(0, Number(seconds) || 0);
+                const updateButton = () => {
+                    otpButton.disabled = remaining > 0;
+                    otpButton.classList.toggle('cooldown', remaining > 0);
+                    otpButton.textContent = remaining > 0 ? remaining : 'Send OTP';
+                };
+                updateButton();
+                if (remaining > 0) {
+                    otpTimer = setInterval(() => {
+                        remaining -= 1;
+                        updateButton();
+                        if (remaining <= 0) clearInterval(otpTimer);
+                    }, 1000);
+                }
+            }
+
+            otpInput.addEventListener('input', () => {
+                otpInput.value = otpInput.value.replace(/\D/g, '').slice(0, 6);
+            });
+
+            otpButton.addEventListener('click', async () => {
+                otpButton.disabled = true;
+                status.textContent = '';
+                status.classList.remove('error');
+                const plainEl = document.getElementById('invitation-otp-plain');
+                plainEl.style.display = 'none';
+                plainEl.textContent = '';
+                try {
+                    const response = await fetch('/api/auth/invitations/send-otp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token })
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error || 'Unable to send the verification code.');
+                    status.textContent = data.sent
+                        ? 'Verification code sent. Check your email inbox.'
+                        : `A code was sent recently. Please wait ${data.cooldown_seconds} seconds.`;
+                    if (data.otp_plain) {
+                        plainEl.textContent = `OTP: ${data.otp_plain}`;
+                        plainEl.style.display = 'block';
+                    }
+                    startOtpCountdown(data.cooldown_seconds);
+                } catch (error) {
+                    status.textContent = error.message || 'Cannot connect to the mail server.';
+                    status.classList.add('error');
+                    otpButton.disabled = false;
+                }
+            });
+
+            function setUsernameStatus(message, state = '') {
+                usernameStatus.textContent = message;
+                usernameStatus.classList.toggle('available', state === 'available');
+                usernameStatus.classList.toggle('unavailable', state === 'unavailable');
+            }
+
+            usernameInput.addEventListener('input', () => {
+                const username = usernameInput.value.trim();
+                const requestSequence = ++usernameCheckSequence;
+                clearTimeout(usernameCheckTimer);
+                if (!username) {
+                    setUsernameStatus('');
+                    return;
+                }
+                if (!/^[a-z_]{3,30}$/.test(username)) {
+                    setUsernameStatus('Use 3-30 lowercase letters (a-z) or underscores.', 'unavailable');
+                    return;
+                }
+                setUsernameStatus('Checking availability...');
+                usernameCheckTimer = setTimeout(async () => {
+                    try {
+                        const response = await fetch(`/api/auth/check-username/${encodeURIComponent(username)}`);
+                        const data = await response.json();
+                        if (requestSequence !== usernameCheckSequence) return;
+                        if (!response.ok) {
+                            setUsernameStatus('Could not check availability. Try again.', 'unavailable');
+                        } else if (data.valid === false) {
+                            setUsernameStatus('Username format is invalid.', 'unavailable');
+                        } else if (data.available) {
+                            setUsernameStatus('Username is available.', 'available');
+                        } else {
+                            setUsernameStatus('Username is already taken.', 'unavailable');
+                        }
+                    } catch {
+                        if (requestSequence === usernameCheckSequence) {
+                            setUsernameStatus('Could not check availability. Try again.', 'unavailable');
+                        }
+                    }
+                }, 350);
+            });
+
+            function updatePasswordRules() {
+                const password = passwordInput.value;
+                const checks = {
+                    'rule-pw-len': password.length >= 8,
+                    'rule-pw-case': /[a-z]/.test(password) && /[A-Z]/.test(password),
+                    'rule-pw-num': /\d/.test(password),
+                    'rule-pw-sym': /[\W_]/.test(password),
+                };
+                Object.entries(checks).forEach(([id, isValid]) => {
+                    const rule = document.getElementById(id);
+                    const icon = rule.querySelector('.password-rule-icon');
+                    rule.classList.toggle('valid', password.length > 0 && isValid);
+                    rule.classList.toggle('invalid', password.length > 0 && !isValid);
+                    icon.textContent = password.length === 0 ? '○' : isValid ? '✓' : '×';
+                });
+            }
+
+            passwordInput.addEventListener('input', updatePasswordRules);
+
+            async function initThemeSwitcher() {
+                try {
+                    const response = await fetch('/styles.css?v=' + Date.now());
+                    originalCSS = await response.text();
+                } catch {}
+                const savedTheme = localStorage.getItem('ramiel_theme');
+                const initialTheme = ['dark', 'ash', 'light'].includes(savedTheme) ? savedTheme : 'dark';
+                themeButtons.forEach(themeButton => {
+                    const isActive = themeButton.dataset.theme === initialTheme;
+                    themeButton.classList.toggle('active', isActive);
+                    themeButton.setAttribute('aria-pressed', String(isActive));
+                });
+                applyAlgorithmicTheme(initialTheme);
+                const activeButton = document.querySelector('.theme-btn.active');
+                if (activeButton) {
+                    themeSlider.style.width = activeButton.offsetWidth + 'px';
+                    themeSlider.style.transform = `translateX(${activeButton.offsetLeft}px)`;
+                }
+                themeButtons.forEach(themeButton => {
+                    themeButton.addEventListener('click', () => {
+                        themeButtons.forEach(button => {
+                            const isActive = button === themeButton;
+                            button.classList.toggle('active', isActive);
+                            button.setAttribute('aria-pressed', String(isActive));
+                        });
+                        themeSlider.style.width = themeButton.offsetWidth + 'px';
+                        themeSlider.style.transform = `translateX(${themeButton.offsetLeft - 4}px)`;
+                        applyAlgorithmicTheme(themeButton.dataset.theme);
+                    });
+                });
+            }
+
+            function applyAlgorithmicTheme(theme) {
+                if (!['dark', 'ash', 'light'].includes(theme)) return;
+                localStorage.setItem('ramiel_theme', theme);
+                let dynamicStyle = document.getElementById('dynamic-theme');
+                if (!dynamicStyle) {
+                    dynamicStyle = document.createElement('style');
+                    dynamicStyle.id = 'dynamic-theme';
+                    document.head.appendChild(dynamicStyle);
+                }
+                if (theme === 'dark') {
+                    dynamicStyle.textContent = '';
+                    return;
+                }
+                const hslRegex = /--L[a-zA-Z0-9]+:\s*hsl\(\s*(\d+),\s*([\d.]+)%,\s*([\d.]+)%\)/g;
+                dynamicStyle.textContent = originalCSS.replace(hslRegex, (match, hue, saturation, lightness) => {
+                    const value = parseFloat(lightness);
+                    if (theme === 'light') return match.replace(/hsl\([^)]+\)/, `hsl(${hue}, ${saturation}%, ${100 - value}%)`);
+                    const ashValue = Math.min(100, value === 0 ? 30 : value * 2);
+                    return match.replace(/hsl\([^)]+\)/, `hsl(${hue}, ${saturation}%, ${ashValue}%)`);
+                });
+            }
+
+            async function initialize() {
+                await initThemeSwitcher();
+                updatePasswordRules();
+                if (!token || !['invite', 'reset'].includes(mode)) {
+                    summary.textContent = 'This link is invalid.';
+                    return;
+                }
+                const endpoint = mode === 'invite'
+                    ? `/api/auth/invitations/${encodeURIComponent(token)}`
+                    : `/api/auth/password-reset/${encodeURIComponent(token)}`;
+                try {
+                    const response = await fetch(endpoint);
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error || 'This link is invalid or expired.');
+                    title.textContent = mode === 'invite' ? 'Accept invitation' : 'Reset password';
+                    summary.textContent = mode === 'invite'
+                        ? 'Complete your profile to create your account.'
+                        : `Choose a new password for ${data.email}.`;
+                    title.hidden = mode !== 'invite';
+                    summary.hidden = mode !== 'invite';
+                    usernameField.hidden = mode !== 'invite';
+                    profileFields.hidden = mode !== 'invite';
+                    otpField.hidden = mode !== 'invite';
+                    invitedEmail.hidden = mode !== 'invite';
+                    document.getElementById('phone-field').hidden = mode !== 'invite';
+                    form.classList.toggle('mode-reset', mode !== 'invite');
+                    document.querySelector('.account-action').classList.toggle('mode-reset', mode !== 'invite');
+                    if (mode === 'invite') {
+                        invitedEmail.textContent = data.email;
+                    }
+                    document.getElementById('username').required = mode === 'invite';
+                    document.getElementById('first-name').required = mode === 'invite';
+                    document.getElementById('last-name').required = mode === 'invite';
+                    otpInput.required = mode === 'invite';
+                    button.textContent = mode === 'invite' ? 'Create account' : 'Update password';
+                    form.hidden = false;
+                } catch (error) {
+                    summary.textContent = error.message;
+                }
+            }
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const password = document.getElementById('password').value;
+                if (mode === 'invite' && !/^\d{6}$/.test(otpInput.value.trim())) {
+                    status.textContent = 'Enter the 6-digit email verification code.';
+                    status.classList.add('error');
+                    return;
+                }
+                if (password !== document.getElementById('confirm-password').value) {
+                    status.textContent = 'Passwords do not match.';
+                    status.classList.add('error');
+                    return;
+                }
+                const phoneDigits = document.getElementById('phone-number').value.replace(/\D/g, '').replace(/^0/, '');
+                const countryCode = document.getElementById('phone-country-code').value;
+                const fullPhoneDigits = countryCode.slice(1) + phoneDigits;
+                if (phoneDigits && (fullPhoneDigits.length < 6 || fullPhoneDigits.length > 15)) {
+                    status.textContent = 'Enter a phone number with 6-15 digits including its country code.';
+                    status.classList.add('error');
+                    return;
+                }
+                button.disabled = true;
+                status.textContent = '';
+                status.classList.remove('error');
+                try {
+                    const endpoint = mode === 'invite'
+                        ? '/api/auth/invitations/accept'
+                        : '/api/auth/password-reset/complete';
+                    const payload = mode === 'invite'
+                        ? {
+                            token,
+                            otp: otpInput.value.trim(),
+                            username: document.getElementById('username').value.trim(),
+                            first_name: document.getElementById('first-name').value.trim(),
+                            last_name: document.getElementById('last-name').value.trim(),
+                            phone: phoneDigits ? `${countryCode}${phoneDigits}` : '',
+                            password
+                        }
+                        : { token, password };
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error || 'Unable to complete this request.');
+                    form.hidden = true;
+                    summary.textContent = data.message;
+                    document.getElementById('success-link').hidden = false;
+                } catch (error) {
+                    status.textContent = error.message;
+                    status.classList.add('error');
+                } finally {
+                    button.disabled = false;
+                }
+            });
+
+            initialize();
+        })();
+    </script>
+</body>
+</html>
